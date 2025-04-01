@@ -186,6 +186,13 @@ def login():
 def login_required(f):
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
+            # Check if this is an API request
+            if request.path.startswith('/api/'):
+                return jsonify({
+                    'error': 'Session expired. Please login again.',
+                    'success': False,
+                    'status': 'unauthorized'
+                }), 401
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
@@ -272,27 +279,24 @@ def upload_file():
     - A file in the 'file' field
     - 'filepath' field indicating the target path in the bucket
     """
-    logger.info("Upload request received")
-    
-    if 'file' not in request.files:
-        logger.error("No file part in the request")
-        return jsonify({'error': 'No file part', 'success': False}), 400
-    
-    upload_file = request.files['file']
-    if upload_file.filename == '':
-        logger.error("No selected file (empty filename)")
-        return jsonify({'error': 'No selected file', 'success': False}), 400
-    
-    # Get the filepath in the bucket (preserve folder structure)
-    filepath = request.form.get('filepath', upload_file.filename)
-    logger.info(f"Preparing to upload: {filepath} (size: {upload_file.content_length if hasattr(upload_file, 'content_length') else 'unknown'})")
-    
-    # Generate a unique ID for this upload for tracking
-    upload_id = str(uuid.uuid4())
-    
     try:
-        logger.info(f"Starting multipart streaming upload: {filepath} (ID: {upload_id})")
-        start_time = time.time()
+        logger.info("Upload request received")
+        
+        if 'file' not in request.files:
+            logger.error("No file part in the request")
+            return jsonify({'error': 'No file part', 'success': False}), 400
+        
+        upload_file = request.files['file']
+        if upload_file.filename == '':
+            logger.error("No selected file (empty filename)")
+            return jsonify({'error': 'No selected file', 'success': False}), 400
+        
+        # Get the filepath in the bucket (preserve folder structure)
+        filepath = request.form.get('filepath', upload_file.filename)
+        logger.info(f"Preparing to upload: {filepath} (size: {upload_file.content_length if hasattr(upload_file, 'content_length') else 'unknown'})")
+        
+        # Generate a unique ID for this upload for tracking
+        upload_id = str(uuid.uuid4())
         
         # For very large files, use the optimized transfer config with acceleration
         file_size = request.content_length
@@ -438,27 +442,12 @@ def upload_file():
             raise Exception("No parts were successfully uploaded")
         
     except Exception as e:
-        logger.error(f"Upload failed: {filepath} (ID: {upload_id}) - {str(e)}")
+        logger.error(f"Upload failed: {str(e)}")
         logger.exception("Detailed error information:")
-        
-        # Attempt to abort the multipart upload if it was initiated
-        if 'multipart_upload_id' in locals():
-            try:
-                retry_with_backoff(
-                    s3.abort_multipart_upload,
-                    Bucket=SPACES_BUCKET,
-                    Key=filepath,
-                    UploadId=multipart_upload_id
-                )
-                logger.info(f"Multipart upload aborted: {filepath}")
-            except Exception as abort_error:
-                logger.error(f"Failed to abort multipart upload: {str(abort_error)}")
-        
         return jsonify({
             'error': str(e),
-            'filepath': filepath,
-            'upload_id': upload_id,
-            'success': False
+            'success': False,
+            'status': 'error'
         }), 500
 
 # Helper function to format file sizes
@@ -480,7 +469,12 @@ def formatSize(size_bytes):
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Simple health check endpoint"""
-    return jsonify({'status': 'healthy'})
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': time.time(),
+        'bucket': SPACES_BUCKET,
+        'region': SPACES_REGION
+    })
 
 @app.route('/logout')
 def logout():
