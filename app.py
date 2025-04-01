@@ -495,4 +495,4 @@ if __name__ == '__main__':
         exit(1)
         
     logger.info(f"Starting server with bucket: {SPACES_BUCKET}")
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=5001) 
