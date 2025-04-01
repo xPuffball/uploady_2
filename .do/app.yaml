@@ -15,7 +15,7 @@ services:
   - key: PORT
     value: 8080
   - key: MAX_CONTENT_LENGTH
-    value: 10737418240  # 10GB in bytes
+    value: 1099511627776  # 1TB in bytes
   - key: UPLOAD_FOLDER
     value: /tmp
   - key: DO_SPACES_KEY
@@ -37,4 +37,8 @@ services:
     scope: RUN_TIME
     type: SECRET
   - key: USE_ACCELERATION
-    value: "True" 
+    value: "True"
+  - key: GUNICORN_TIMEOUT
+    value: "86400"  # 24 hours
+  - key: GUNICORN_WORKERS
+    value: "1"  # Single worker for large uploads 
