@@ -1,0 +1,40 @@
+name: uploady
+services:
+- name: web
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: your-github-username/your-repo-name
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  run_command: gunicorn --bind 0.0.0.0:$PORT app:app
+  envs:
+  - key: FLASK_ENV
+    value: production
+  - key: PORT
+    value: 8080
+  - key: MAX_CONTENT_LENGTH
+    value: 10737418240  # 10GB in bytes
+  - key: UPLOAD_FOLDER
+    value: /tmp
+  - key: DO_SPACES_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: DO_SPACES_SECRET
+    scope: RUN_TIME
+    type: SECRET
+  - key: DO_SPACES_REGION
+    value: nyc3
+  - key: DO_SPACES_ENDPOINT
+    value: https://nyc3.digitaloceanspaces.com
+  - key: DO_SPACES_BUCKET
+    value: uptest
+  - key: SECRET_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: APP_PASSWORD
+    scope: RUN_TIME
+    type: SECRET
+  - key: USE_ACCELERATION
+    value: "True" 

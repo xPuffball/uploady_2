@@ -1,0 +1,5 @@
+rules:
+- name: Increase Upload Size Limit
+  action: bypass
+  expression: http.request.uri.path contains "/api/upload"
+  description: Bypass Cloudflare's default request size limit for uploads 

@@ -33,42 +33,14 @@ else:
 app = Flask(__name__, 
             static_url_path='', 
             static_folder='static')
+CORS(app)
 
-# Get the domain from environment or default to localhost
-DOMAIN = os.getenv('DOMAIN', 'localhost')
-IS_PRODUCTION = os.getenv('FLASK_ENV') == 'production'
-
-# Configure CORS with proper credentials handling
-CORS(app, 
-     supports_credentials=True,
-     resources={
-         r"/*": {
-             "origins": ["*"] if not IS_PRODUCTION else [f"https://{DOMAIN}"],
-             "methods": ["GET", "POST", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization"],
-             "expose_headers": ["Content-Type", "Authorization"],
-             "supports_credentials": True
-         }
-     })
+# Configure Flask to handle larger file uploads
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024 * 10  # 10GB max file size
+app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
 
 # Set a secret key for session management
 app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(16))
-
-# Configure session cookie settings based on environment
-if IS_PRODUCTION:
-    app.config.update(
-        SESSION_COOKIE_SECURE=True,  # Only send cookie over HTTPS
-        SESSION_COOKIE_HTTPONLY=True,  # Prevent JavaScript access to cookie
-        SESSION_COOKIE_SAMESITE='None',  # Allow cross-site cookie sending
-        SESSION_COOKIE_DOMAIN=DOMAIN  # Set the domain for production
-    )
-else:
-    app.config.update(
-        SESSION_COOKIE_SECURE=False,  # Allow HTTP in development
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE='Lax',  # More restrictive in development
-        SESSION_COOKIE_DOMAIN=None  # Let browser set the domain
-    )
 
 # Set password for accessing the app
 APP_PASSWORD = os.getenv('APP_PASSWORD', 'upload123')  # Default password if not set in .env
@@ -154,20 +126,7 @@ def login():
     if request.method == 'POST':
         if request.form['password'] == APP_PASSWORD:
             session['logged_in'] = True
-            response = redirect(url_for('index'))
-            
-            # Set cookie with environment-specific settings
-            cookie_options = {
-                'secure': IS_PRODUCTION,  # Only require HTTPS in production
-                'httponly': True,
-                'samesite': 'None' if IS_PRODUCTION else 'Lax'
-            }
-            
-            if IS_PRODUCTION:
-                cookie_options['domain'] = DOMAIN
-                
-            response.set_cookie('session', session.get('_id', ''), **cookie_options)
-            return response
+            return redirect(url_for('index'))
         else:
             error = 'Invalid password. Please try again.'
     return '''
@@ -213,6 +172,7 @@ def login():
                     <p>Please enter the password to access this tool</p>
                     
                     <form class="login-form" method="post">
+
                         <div>
                             <input type="password" name="password" placeholder="Enter password" required autofocus>
                         </div>
