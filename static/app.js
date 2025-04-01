@@ -748,7 +748,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Upload a single file
-    async function uploadFile(file, metadata) {
+    async function uploadFile(file, metadata, retryCount = 0) {
+        const MAX_RETRIES = 5;  // Maximum number of retries
+        const RETRY_DELAY = 2000;  // Delay between retries in milliseconds
+        
         // Extract filename and original relative path
         const originalRelativePath = file.webkitRelativePath;
         
@@ -768,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `${metadata.basePath}/${newTopDir}/${remainingPath}`
             : `${metadata.basePath}/${newTopDir}`;
         
-        console.log(`Starting upload for file: ${originalRelativePath}`);
+        console.log(`Starting upload for file: ${originalRelativePath} (Attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
         console.log(`Target path: ${newFilePath}`);
         
         try {
@@ -791,11 +794,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 return { success: true };
             } else {
                 console.error(`Upload returned error for: ${newFilePath}`, response.error);
-                return { success: false, error: response.error || 'Upload failed' };
+                throw new Error(response.error || 'Upload failed');
             }
         } catch (error) {
             console.error(`Upload failed for: ${newFilePath}`, error);
-            return { success: false, error: error.message };
+            
+            // Check if we should retry
+            if (retryCount < MAX_RETRIES) {
+                console.log(`Retrying upload in ${RETRY_DELAY/1000} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                return uploadFile(file, metadata, retryCount + 1);
+            } else {
+                console.error(`Max retries (${MAX_RETRIES}) reached for: ${newFilePath}`);
+                return { success: false, error: error.message };
+            }
         }
     }
     

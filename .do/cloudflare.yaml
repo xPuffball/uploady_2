@@ -1,5 +1,22 @@
 rules:
-- name: Increase Upload Size Limit
-  action: bypass
-  expression: http.request.uri.path contains "/api/upload"
+- name: "Allow Large File Uploads"
+  action: "bypass"
+  expression: "http.request.uri.path contains '/api/upload'"
+  settings:
+    max_upload_size: 1099511627776  # 1TB
+    browser_check: "off"
+    security_level: "off"
+    ssl: "off"
+    edge_cache_ttl: 0
+    always_online: "off"
+    cache_level: "bypass"
+    origin_error_page_pass_thru: "on"
+    respect_strong_etag: "off"
+    response_headers:
+      - name: "Connection"
+        value: "keep-alive"
+      - name: "Keep-Alive"
+        value: "timeout=86400"
+      - name: "Transfer-Encoding"
+        value: "chunked"
   description: Bypass Cloudflare's default request size limit for uploads 

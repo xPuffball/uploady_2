@@ -278,16 +278,17 @@ def upload_file():
     Handle direct streaming multipart upload to DigitalOcean Spaces with no temp files.
     Implements robust retry logic for each part with extended timeouts for very large files.
     Uses S3 Transfer Acceleration for faster uploads over long distances.
-    
-    Expects:
-    - A file in the 'file' field
-    - 'filepath' field indicating the target path in the bucket
     """
     try:
         # Start timing the upload
         start_time = time.time()
         
         logger.info("Upload request received")
+        
+        # Log request headers for debugging
+        logger.info(f"Request headers: {dict(request.headers)}")
+        logger.info(f"Content length: {request.content_length}")
+        logger.info(f"Content type: {request.content_type}")
         
         if 'file' not in request.files:
             logger.error("No file part in the request")
@@ -311,7 +312,6 @@ def upload_file():
         
         if use_optimized and USE_ACCELERATION:
             logger.info(f"Using optimized transfer with acceleration for large file: {filepath} ({formatSize(file_size)})")
-            # Set up multipart upload parameters
             try:
                 # Use boto3's managed upload with our optimized transfer config
                 upload_file.seek(0)  # Ensure we're at the start of the file
@@ -344,7 +344,6 @@ def upload_file():
                 # Fall through to standard streaming upload
         
         # Standard streaming upload with manual part management (fallback or for smaller files)
-        # Initialize multipart upload with retry
         try:
             mpu = retry_with_backoff(
                 s3.create_multipart_upload,
@@ -361,7 +360,8 @@ def upload_file():
                 'error': f"Failed to initiate upload: {str(e)}",
                 'filepath': filepath,
                 'upload_id': upload_id,
-                'success': False
+                'success': False,
+                'status': 'init_failed'
             }), 500
         
         # Track parts
@@ -402,9 +402,28 @@ def upload_file():
             except Exception as e:
                 failed_parts += 1
                 logger.error(f"Failed to upload part {part_number} after retries: {str(e)}")
-                # If any part fails, the upload should be considered failed
-                # Abort the upload and return error immediately rather than continuing
-                raise Exception(f"Failed to upload part {part_number}: {str(e)}")
+                # If any part fails, abort the upload and return error
+                try:
+                    retry_with_backoff(
+                        s3.abort_multipart_upload,
+                        Bucket=SPACES_BUCKET,
+                        Key=filepath,
+                        UploadId=multipart_upload_id,
+                        max_retries=5,
+                        initial_backoff=1
+                    )
+                    logger.info(f"Multipart upload aborted: {filepath}")
+                except Exception as abort_error:
+                    logger.error(f"Failed to abort multipart upload: {str(abort_error)}")
+                
+                return jsonify({
+                    'error': f"Upload failed at part {part_number}: {str(e)}",
+                    'filepath': filepath,
+                    'upload_id': upload_id,
+                    'part_number': part_number,
+                    'success': False,
+                    'status': 'interrupted'
+                }), 500
             
             # Get next chunk
             chunk = upload_file.read(chunk_size)

@@ -4,18 +4,22 @@ services:
   github:
     branch: main
     deploy_on_push: true
-    repo: your-github-username/your-repo-name
+    repo: jaeminlee/uploady
+  health_check:
+    http_path: /api/health
+    initial_delay_seconds: 10
+    period_seconds: 60
   http_port: 8080
   instance_count: 1
   instance_size_slug: basic-xxl
-  run_command: gunicorn --bind 0.0.0.0:$PORT --timeout 86400 --workers 1 app:app
+  run_command: gunicorn --timeout 86400 --workers 1 --threads 4 --worker-class gthread --bind 0.0.0.0:8080 app:app
   envs:
   - key: FLASK_ENV
     value: production
   - key: PORT
     value: 8080
   - key: MAX_CONTENT_LENGTH
-    value: 1099511627776  # 1TB in bytes
+    value: "1099511627776"
   - key: UPLOAD_FOLDER
     value: /tmp
   - key: DO_SPACES_KEY
@@ -29,7 +33,8 @@ services:
   - key: DO_SPACES_ENDPOINT
     value: https://nyc3.digitaloceanspaces.com
   - key: DO_SPACES_BUCKET
-    value: uptest
+    scope: RUN_TIME
+    type: SECRET
   - key: SECRET_KEY
     scope: RUN_TIME
     type: SECRET
@@ -39,6 +44,21 @@ services:
   - key: USE_ACCELERATION
     value: "True"
   - key: GUNICORN_TIMEOUT
-    value: "86400"  # 24 hours
+    value: "86400"
   - key: GUNICORN_WORKERS
-    value: "1"  # Single worker for large uploads 
+    value: "1"
+  - key: GUNICORN_THREADS
+    value: "4"
+  - key: GUNICORN_WORKER_CLASS
+    value: "gthread"
+  - key: KEEP_ALIVE_TIMEOUT
+    value: "86400"
+  - key: PROXY_READ_TIMEOUT
+    value: "86400"
+  - key: PROXY_CONNECT_TIMEOUT
+    value: "86400"
+  - key: PROXY_SEND_TIMEOUT
+    value: "86400"
+  - key: UPLOAD_TEMP_DIR
+    scope: RUN_TIME
+    type: SECRET 
