@@ -280,6 +280,9 @@ def upload_file():
     - 'filepath' field indicating the target path in the bucket
     """
     try:
+        # Start timing the upload
+        start_time = time.time()
+        
         logger.info("Upload request received")
         
         if 'file' not in request.files:
