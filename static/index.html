@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Ocean Folder Uploader</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Folder Uploader</h1>
+            <p>Upload folders (videos, images, metadata) to Digital Ocean Spaces</p>
+            <div class="logout-container">
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="upload-container">
+            <div id="metadata-form" class="metadata-form">
+                <h3>Upload Metadata</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="user-input">User</label>
+                        <input type="text" id="user-input" class="metadata-input" placeholder="e.g. John">
+                    </div>
+                    <div class="form-group">
+                        <label for="camera-input">Camera</label>
+                        <input type="text" id="camera-input" class="metadata-input" placeholder="e.g. Jetson1">
+                    </div>
+                    <div class="form-group">
+                        <label for="date-input">Date</label>
+                        <input type="date" id="date-input" class="metadata-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-input">Task</label>
+                        <input type="text" id="task-input" class="metadata-input" placeholder="e.g. Cleaning">
+                    </div>
+                </div>
+            </div>
+
+            <div id="upload-area" class="upload-area">
+                <i class="fas fa-cloud-upload-alt fa-3x" style="color: var(--primary-color);"></i>
+                <h3>Drag & Drop Folders Here</h3>
+                <p>Or click to select folders</p>
+                <input type="file" id="folder-input" class="file-input" webkitdirectory directory multiple mozdirectory>
+                <button class="btn" id="select-btn">Select Folder</button>
+            </div>
+
+            <div id="upload-controls" style="display: none;">
+                <h3 style="margin-top: 0; margin-bottom: 15px;">Ready to Upload</h3>
+                <button id="upload-btn" class="btn">
+                    <i class="fas fa-upload"></i> Start Upload
+                </button>
+                <button id="cancel-btn" class="btn" style="background-color: var(--error-color); margin-left: 10px;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+
+            <div id="upload-list" class="upload-list" style="display: none;">
+                <!-- Files will be listed here dynamically -->
+            </div>
+        </div>
+
+        <div id="summary" class="summary" style="display: none;">
+            <h3>Upload Summary</h3>
+            <div class="stats">
+                <div class="stat-item">
+                    <div id="total-files" class="stat-value">0</div>
+                    <div class="stat-label">Files</div>
+                </div>
+                <div class="stat-item">
+                    <div id="total-size" class="stat-value">0 KB</div>
+                    <div class="stat-label">Total Size</div>
+                </div>
+                <div class="stat-item">
+                    <div id="uploaded-files" class="stat-value">0</div>
+                    <div class="stat-label">Uploaded</div>
+                </div>
+                <div class="stat-item">
+                    <div id="failed-files" class="stat-value">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html> 
