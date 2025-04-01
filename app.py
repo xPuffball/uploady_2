@@ -35,8 +35,8 @@ app = Flask(__name__,
             static_folder='static')
 CORS(app)
 
-# Configure Flask to handle larger file uploads
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024 * 10  # 10GB max file size
+# Configure Flask to handle terabyte-scale uploads
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024 * 1024  # 1TB max file size
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
 
 # Set a secret key for session management
@@ -65,12 +65,12 @@ s3_config = boto3.session.Config(
 
 # Create a transfer config with increased timeouts for larger files
 transfer_config = TransferConfig(
-    multipart_threshold=10 * 1024 * 1024,  # 10MB
-    max_concurrency=10,
-    multipart_chunksize=25 * 1024 * 1024,  # 25MB chunks
+    multipart_threshold=100 * 1024 * 1024,  # 100MB - increased for terabyte files
+    max_concurrency=20,  # Increased concurrency
+    multipart_chunksize=100 * 1024 * 1024,  # 100MB chunks - increased for terabyte files
     use_threads=True,
-    max_io_queue=100,
-    io_chunksize=262144     # 256KB chunks for reading
+    max_io_queue=200,  # Increased queue size
+    io_chunksize=524288  # 512KB chunks for reading - increased for better throughput
 )
 
 # Determine if we should use acceleration endpoint
@@ -369,7 +369,7 @@ def upload_file():
         part_number = 1
         
         # Stream the file directly to S3 in larger chunks for better efficiency with very large files
-        chunk_size = 25 * 1024 * 1024  # 25MB chunks (increased for terabyte-scale uploads)
+        chunk_size = 100 * 1024 * 1024  # 100MB chunks (optimized for terabyte-scale uploads)
         upload_file.seek(0)  # Reset to beginning of file
         chunk = upload_file.read(chunk_size)
         

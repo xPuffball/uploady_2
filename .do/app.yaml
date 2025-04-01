@@ -7,8 +7,8 @@ services:
     repo: your-github-username/your-repo-name
   http_port: 8080
   instance_count: 1
-  instance_size_slug: basic-xxs
-  run_command: gunicorn --bind 0.0.0.0:$PORT app:app
+  instance_size_slug: basic-xxl
+  run_command: gunicorn --bind 0.0.0.0:$PORT --timeout 86400 --workers 1 app:app
   envs:
   - key: FLASK_ENV
     value: production
