@@ -489,10 +489,15 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    # Check if credentials are set
-    if not all([SPACES_KEY, SPACES_SECRET, SPACES_BUCKET]):
-        logger.error("Missing DigitalOcean Spaces credentials in .env file")
-        exit(1)
-        
+    # Get port from environment variable or default to 5000
+    port = int(os.getenv('PORT', 5000))
+    
+    # Only run debug mode in development
+    debug = os.getenv('FLASK_ENV') == 'development'
+    
+    # Log startup information
     logger.info(f"Starting server with bucket: {SPACES_BUCKET}")
-    app.run(debug=True, host='0.0.0.0', port=5001) 
+    logger.info(f"Running in {'development' if debug else 'production'} mode")
+    
+    # Start the server
+    app.run(host='0.0.0.0', port=port, debug=debug) 
