@@ -1,6 +1,4 @@
-# DigitalOcean Folder Uploader
-
-A minimalistic web application for uploading large folders (up to 1TB) to DigitalOcean Spaces.
+# Uploady
 
 ## Features
 
@@ -63,7 +61,7 @@ The application will be available at http://localhost:5000
 - TransferConfig is configured for optimal upload settings:
   - Files over 25MB trigger multipart uploads
   - Each chunk is 25MB
-  - Up to 10 concurrent threads for parts
+  - Up to 30 concurrent threads for parts
   - 5 automatic retries for failed parts
 
 ### Frontend
@@ -98,7 +96,3 @@ You can adjust these parameters in `app.py`:
 You can adjust these parameters in `static/app.js`:
 
 - `MAX_CONCURRENT_UPLOADS`: Number of files to upload simultaneously (default: 3)
-
-## License
-
-MIT 
